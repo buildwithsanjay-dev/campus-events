@@ -10,7 +10,7 @@ CampusEvents is a single-page, read-only website that lists upcoming campus even
 | Data | Supabase (Postgres + PostgREST) | Stores the `events` table, anon read-only via RLS |
 | Hosting | Cloudflare Pages | Builds from GitHub `main` and serves `dist` |
 | Source | GitHub (public) | Commit history and diffs |
-| Docs | Notion page + `docs/runbooks/` | Schema and on-call guidance |
+| Docs | Notion page + `knowledge-vault/` | Schema and on-call guidance |
 
 ## Data flow
 

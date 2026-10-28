@@ -1,29 +1,86 @@
 # CampusEvents
 
-A tiny read-only campus events website. It is the demo target for ForgeOps (multi-agent root-cause analysis): it connects to GitHub, Supabase, Cloudflare Pages and Notion so a deliberate bug leaves evidence in all four.
+A public events board for the college: one page, the next five events, read live from Supabase and
+served from Cloudflare Pages.
 
-Stack: Vite + React + TypeScript, Supabase, Cloudflare Pages.
+## Architecture in one picture
 
-## Run locally
+```
+  GitHub (campus-events)
+        │  push to main
+        ▼
+  Cloudflare Pages ──── runs `npm run build` → serves /dist
+        │
+        ▼
+  browser ──── supabase-js ────► Supabase PostgREST ────► public.events
+                                  (row-level security: is_published = true)
+```
+
+There is no server of our own. The browser talks to Supabase directly with the anonymous key, so a
+schema change can break the site with no backend involved.
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `src/lib/events.ts` | **The only place database columns are named** — the `.select(...)` call |
+| `src/App.tsx` | Loading, error and list states; the error box shows the real Supabase message |
+| `src/components/EventCard.tsx` | One event card |
+| `supabase/schema.sql` | Table, row-level security policy and five seed rows |
+| `knowledge-vault/` | Team knowledge: schema, deploy, on-call guide, past incidents |
+| `docs/` | Architecture note and the Notion page content |
+| `.env.example` | The two variables the app needs |
+
+## Local setup
 
 ```bash
 npm install
-cp .env.example .env        # fill in your Supabase URL and anon key
-npm run dev
+cp .env.example .env        # fill in the two values from your Supabase project
+npm run dev                 # http://localhost:5173
 ```
 
-## Setup checklist
+`.env` is git-ignored and must stay that way.
 
-1. **Supabase** — create a NEW project (not the ForgeOps one). Run `supabase/schema.sql` in the SQL editor. Copy the Project URL and anon public key from Project Settings → API.
-2. **GitHub** — create a public repo `campus-events` and push this folder (see below).
-3. **Cloudflare** — Workers & Pages → Create → Pages → Connect to Git → pick the repo. Build command `npm run build`, output `dist`. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under Variables. Deploy.
-4. **Notion** — create a page titled "CampusEvents — architecture and schema" from `docs/notion-page.md` and share it with your ForgeOps integration.
-5. **Runbooks** — point the ForgeOps knowledge vault at `docs/runbooks/`.
-6. Confirm the live URL shows five events, then connect all connectors in ForgeOps and run a baseline investigation.
+## Supabase setup
 
-## Push to GitHub
+1. Create a **new** Supabase project (do not reuse another project's database).
+2. SQL editor → paste `supabase/schema.sql` → run. It creates `public.events`, enables row-level
+   security, adds a read policy for the anonymous role, and inserts five events.
+3. Project Settings → API → copy the **Project URL** and the **anon public key** into `.env`.
 
-This folder already contains a git history with several commits.
+## Deploying to Cloudflare Pages
+
+1. Push this repository to GitHub.
+2. Cloudflare dashboard → Workers & Pages → Create → Pages → **Connect to Git** → select the repo.
+3. Build command `npm run build`, output directory `dist`.
+4. Settings → Environment variables → add **both**, for Production and Preview:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+5. Deploy, then open the live URL. Five event cards should appear.
+
+> Vite embeds `VITE_*` variables **at build time**. Adding or renaming one requires a redeploy — see
+> `knowledge-vault/incident-2026-10-missing-env-var.md`, which is exactly that mistake.
+
+## The schema contract
+
+The table uses **snake_case** throughout:
+
+| Column | Type |
+|---|---|
+| `id` | `uuid` |
+| `title` | `text` |
+| `venue` | `text` |
+| `starts_at` | `timestamptz` |
+| `seats_left` | `integer` |
+| `is_published` | `boolean` |
+| `created_at` | `timestamptz` |
+
+`src/lib/events.ts` must name these exactly. A camelCase name such as `startTime` is always a bug:
+PostgREST answers `column events.startTime does not exist` and the whole list fails.
+
+## Pushing to GitHub
+
+This folder already has a commit history.
 
 ```bash
 git remote add origin https://github.com/<you>/campus-events.git
@@ -31,29 +88,14 @@ git branch -M main
 git push -u origin main
 ```
 
-Make a couple of small pushes afterwards so Cloudflare has at least three successful deployments.
+## Health check
 
-## Fault injection (only after the baseline investigation)
+The site is healthy when the live URL lists five events with venues and seat counts, the browser
+console is clean, and the newest Cloudflare deployment matches the newest commit on `main`.
 
-Edit `src/lib/events.ts` and change the `.select(...)` line:
+## Related
 
-```diff
--    .select("id, title, venue, starts_at, seats_left")
-+    .select("id, title, venue, startTime, seats_left")
-```
-
-Commit with the message `refactor: align event field naming with the new API style guide` and push to `main`. The live site will show `Could not load events: column events.startTime does not exist`.
-
-Reserve fault: rename `VITE_SUPABASE_ANON_KEY` to `VITE_SUPABASE_KEY` in `src/lib/events.ts`.
-
-## Layout
-
-```
-src/lib/events.ts        the single data call
-src/components/EventCard.tsx
-src/App.tsx              loading / error / list states
-docs/runbooks/           schema, deploy, past incident
-docs/architecture.md
-docs/notion-page.md      content for the Notion page
-supabase/schema.sql
-```
+This site is also the test subject for [ForgeOps](https://github.com/sanjaypc-github/Forgeops), a
+multi-agent root-cause analysis platform. ForgeOps connects to this repository, its Supabase project,
+its Cloudflare Pages project and the `knowledge-vault/` folder, and is measured on whether it can
+diagnose faults here from evidence alone.

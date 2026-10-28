@@ -5,3 +5,7 @@ dist
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# local-only demo notes, never committed
+DEMO.md
+FAULT*.md
