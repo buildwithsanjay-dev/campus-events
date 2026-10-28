@@ -39,13 +39,13 @@ export default function EventDialog({ event, onClose }: Props) {
           <CloseIcon />
         </button>
 
-        <p className="sheet__when">{countdown(event.starts_at)}</p>
+        <p className="sheet__when">{countdown(event.startTime)}</p>
         <h2 id="sheet-title" className="sheet__title">{event.title}</h2>
 
         <dl className="sheet__facts">
           <div className="fact">
             <dt><ClockIcon /> Starts</dt>
-            <dd>{fullDate(event.starts_at)}</dd>
+            <dd>{fullDate(event.startTime)}</dd>
           </div>
           <div className="fact">
             <dt><PinIcon /> Venue</dt>
@@ -58,14 +58,14 @@ export default function EventDialog({ event, onClose }: Props) {
         </dl>
 
         <p className="sheet__note">
-          Doors open fifteen minutes before {clockTime(event.starts_at)}. Entry is free for students
+          Doors open fifteen minutes before {clockTime(event.startTime)}. Entry is free for students
           with a valid ID card.
         </p>
 
         <div className="sheet__actions">
           <a
             className="button button--primary"
-            href={calendarUrl(event.title, event.venue, event.starts_at)}
+            href={calendarUrl(event.title, event.venue, event.startTime)}
             target="_blank"
             rel="noreferrer"
           >

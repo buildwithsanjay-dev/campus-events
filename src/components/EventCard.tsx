@@ -17,11 +17,11 @@ export default function EventCard({ event, featured = false, onOpen }: Props) {
       className={featured ? "event event--featured" : "event"}
       onClick={() => onOpen(event)}
       aria-haspopup="dialog"
-      aria-label={`${event.title}, ${weekday(event.starts_at)} at ${clockTime(event.starts_at)}, ${event.venue}. View details`}
+      aria-label={`${event.title}, ${weekday(event.startTime)} at ${clockTime(event.startTime)}, ${event.venue}. View details`}
     >
-      <time className="event__date" dateTime={event.starts_at}>
-        <span className="event__day">{dayNumber(event.starts_at)}</span>
-        <span className="event__month">{monthShort(event.starts_at)}</span>
+      <time className="event__date" dateTime={event.startTime}>
+        <span className="event__day">{dayNumber(event.startTime)}</span>
+        <span className="event__month">{monthShort(event.startTime)}</span>
       </time>
 
       <span className="event__body">
@@ -30,9 +30,9 @@ export default function EventCard({ event, featured = false, onOpen }: Props) {
         <span className="event__meta">
           <span className="event__metaitem"><PinIcon /> {event.venue}</span>
           <span className="event__metaitem">
-            {weekday(event.starts_at)}, {clockTime(event.starts_at)}
+            {weekday(event.startTime)}, {clockTime(event.startTime)}
           </span>
-          <span className="event__when">{countdown(event.starts_at)}</span>
+          <span className="event__when">{countdown(event.startTime)}</span>
         </span>
       </span>
 

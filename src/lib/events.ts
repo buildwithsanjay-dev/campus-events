@@ -9,16 +9,16 @@ export interface CampusEvent {
   id: string;
   title: string;
   venue: string;
-  starts_at: string;
+  startTime: string;
   seats_left: number;
 }
 
 export async function fetchEvents(): Promise<CampusEvent[]> {
   const { data, error } = await supabase
     .from("events")
-    .select("id, title, venue, starts_at, seats_left")   // ← the line the bug will change
+    .select("id, title, venue, startTime, seats_left")
     .eq("is_published", true)
-    .order("starts_at", { ascending: true });
+    .order("startTime", { ascending: true });
 
   if (error) throw new Error(`Could not load events: ${error.message}`);
   return data ?? [];
